@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10110f">
+  <title>Onny Coach | Cronómetro deportivo</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #10110f;
+      --surface: #181a17;
+      --surface-raised: #20221e;
+      --surface-soft: #151713;
+      --text: #f5f4ef;
+      --muted: #a5a69d;
+      --gold: #d7b35a;
+      --gold-bright: #f0d27d;
+      --line: rgba(215, 179, 90, .2);
+      --line-soft: rgba(255, 255, 255, .08);
+      --danger: #ed8076;
+      --shadow: 0 22px 70px rgba(0, 0, 0, .3);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(ellipse at 50% -18%, rgba(215, 179, 90, .1), transparent 38rem),
+        var(--bg);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      transition: background .25s ease, color .25s ease;
+    }
+    body.light {
+      color-scheme: light;
+      --bg: #f2f0e9;
+      --surface: #fffefa;
+      --surface-raised: #f6f3e9;
+      --surface-soft: #f9f7f0;
+      --text: #1d201b;
+      --muted: #686b62;
+      --gold: #a7832c;
+      --gold-bright: #89671e;
+      --line: rgba(167, 131, 44, .25);
+      --line-soft: rgba(31, 34, 28, .1);
+      --shadow: 0 22px 70px rgba(45, 39, 22, .09);
+      background: radial-gradient(ellipse at 50% -18%, rgba(167, 131, 44, .13), transparent 38rem), var(--bg);
+    }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, input:focus-visible, label:focus-within {
+      outline: 2px solid var(--gold-bright);
+      outline-offset: 3px;
+    }
+    .app-shell { width: min(1120px, calc(100% - 40px)); margin: 0 auto; padding: 28px 0 48px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+    .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+    .logo-frame {
+      width: 54px; height: 54px; flex: 0 0 54px; border: 1px solid var(--gold);
+      border-radius: 16px; display: grid; place-items: center; overflow: hidden;
+      background: linear-gradient(145deg, rgba(215,179,90,.16), rgba(215,179,90,.025));
+      box-shadow: 0 0 0 4px rgba(215,179,90,.06);
+    }
+    .logo-frame img { width: 100%; height: 100%; object-fit: cover; }
+    .brand-mark { color: var(--gold-bright); width: 29px; height: 29px; }
+    .brand-name { font-size: 19px; line-height: 1.15; letter-spacing: .18em; font-weight: 800; }
+    .brand-caption { margin-top: 5px; font-size: 10px; color: var(--muted); letter-spacing: .16em; text-transform: uppercase; }
+    .top-actions { display: flex; align-items: center; gap: 10px; }
+    .icon-button, .quiet-button {
+      border: 1px solid var(--line-soft); background: var(--surface); border-radius: 12px;
+      cursor: pointer; transition: .2s ease;
+    }
+    .icon-button { width: 42px; height: 42px; display: grid; place-items: center; font-size: 17px; }
+    .quiet-button { padding: 10px 13px; font-size: 12px; color: var(--muted); }
+    .icon-button:hover, .quiet-button:hover { border-color: var(--gold); color: var(--gold-bright); transform: translateY(-1px); }
+    .live-clock { text-align: right; color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .live-clock strong { display: block; color: var(--text); font-size: 13px; font-weight: 650; }
+    .hero { text-align: center; padding: 43px 0 28px; }
+    .eyebrow { color: var(--gold); font-size: 10px; font-weight: 750; letter-spacing: .24em; text-transform: uppercase; }
+    h1 { margin: 10px 0 8px; font-size: clamp(29px, 4vw, 43px); letter-spacing: -.055em; line-height: 1.1; }
+    .subtitle { color: var(--muted); margin: 0; font-size: 14px; }
+    .quote { display: inline-flex; align-items: center; gap: 9px; margin-top: 17px; padding: 9px 14px; border: 1px solid var(--line); border-radius: 999px; color: var(--gold-bright); font-size: 12px; }
+    .quote::before { content: "✦"; font-size: 10px; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, .9fr); gap: 18px; align-items: stretch; }
+    .card { border: 1px solid var(--line-soft); background: var(--surface); border-radius: 22px; box-shadow: var(--shadow); }
+    .timer-card { padding: 29px clamp(19px, 4vw, 43px) 26px; position: relative; overflow: hidden; }
+    .timer-card::before { content: ""; position: absolute; top: 0; left: 12%; right: 12%; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); opacity: .7; }
+    .timer-status-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .section-label { color: var(--muted); text-transform: uppercase; letter-spacing: .16em; font-weight: 700; font-size: 10px; }
+    .status-pill { display: inline-flex; align-items: center; gap: 8px; background: var(--surface-raised); border: 1px solid var(--line-soft); border-radius: 999px; padding: 7px 11px; font-size: 11px; color: var(--muted); }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #868980; }
+    .status-pill.running { border-color: var(--line); color: var(--gold-bright); }
+    .status-pill.running .status-dot { background: #64c78a; box-shadow: 0 0 12px rgba(100,199,138,.75); animation: pulse 1.5s infinite; }
+    .status-pill.paused .status-dot { background: var(--gold); }
+    @keyframes pulse { 50% { opacity: .45; box-shadow: 0 0 3px rgba(100,199,138,.4); } }
+    .timer-display { display: flex; align-items: baseline; justify-content: center; gap: clamp(3px, 1.3vw, 13px); padding: 48px 0 34px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .time-unit { display: flex; align-items: baseline; gap: 3px; }
+    .time-number { font-size: clamp(37px, 7.4vw, 81px); line-height: 1; font-weight: 650; letter-spacing: -.07em; }
+    .time-number.millis { font-size: clamp(24px, 4.3vw, 43px); color: var(--gold-bright); letter-spacing: -.045em; }
+    .time-label { color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    .time-separator { font-size: clamp(32px, 6vw, 65px); color: var(--gold); opacity: .68; transform: translateY(-3px); }
+    .progress-area { margin: 0 auto 25px; max-width: 600px; }
+    .progress-meta { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; margin-bottom: 9px; }
+    .progress-meta strong { color: var(--text); font-weight: 650; }
+    .progress-track { height: 5px; border-radius: 5px; background: var(--surface-raised); overflow: hidden; }
+    .progress-fill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--gold), var(--gold-bright)); transition: width .3s ease; }
+    .controls { display: flex; justify-content: center; flex-wrap: wrap; gap: 9px; }
+    .btn { min-height: 43px; border: 1px solid var(--line-soft); border-radius: 12px; padding: 0 16px; background: var(--surface-raised); font-size: 12px; font-weight: 700; cursor: pointer; transition: transform .2s ease, border-color .2s ease, background .2s ease, opacity .2s ease; }
+    .btn:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--gold); }
+    .btn:active:not(:disabled) { transform: translateY(0); }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+    .btn-primary { background: var(--gold); border-color: var(--gold); color: #18160f; }
+    .btn-primary:hover:not(:disabled) { background: var(--gold-bright); }
+    .btn-outline { color: var(--gold-bright); border-color: var(--line); }
+    .btn-danger { color: var(--danger); }
+    .btn-wide { min-width: 145px; }
+    .timer-footnote { display: flex; justify-content: center; flex-wrap: wrap; gap: 22px; margin-top: 22px; color: var(--muted); font-size: 11px; }
+    .timer-footnote span { display: inline-flex; align-items: center; gap: 7px; }
+    .timer-footnote b { color: var(--text); font-weight: 650; }
+    .side-card { padding: 23px; display: flex; flex-direction: column; }
+    .card-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--line-soft); }
+    .card-heading h2 { margin: 0; font-size: 15px; letter-spacing: -.02em; }
+    .count-badge { min-width: 28px; height: 28px; padding: 0 8px; display: grid; place-items: center; background: rgba(215,179,90,.12); border: 1px solid var(--line); border-radius: 999px; color: var(--gold-bright); font-size: 11px; font-weight: 750; }
+    .records-list { list-style: none; margin: 0; padding: 7px 5px 7px 0; max-height: 345px; min-height: 210px; overflow: auto; scrollbar-color: var(--gold) var(--surface-raised); scrollbar-width: thin; }
+    .record-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 9px; border-bottom: 1px solid var(--line-soft); animation: appear .3s ease both; }
+    .record-item:last-child { border-bottom: 0; }
+    @keyframes appear { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
+    .record-index { display: grid; place-items: center; width: 29px; height: 29px; flex: 0 0 29px; background: var(--surface-raised); border-radius: 9px; color: var(--gold-bright); font-size: 11px; font-weight: 750; }
+    .record-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .record-title { font-size: 12px; font-weight: 650; }
+    .record-date { margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .record-time { font-variant-numeric: tabular-nums; font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .empty-state { min-height: 190px; display: grid; place-items: center; text-align: center; color: var(--muted); font-size: 12px; line-height: 1.7; padding: 15px; }
+    .empty-icon { display: block; color: var(--gold); font-size: 23px; margin-bottom: 7px; }
+    .record-actions { display: flex; justify-content: space-between; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
+    .record-actions .btn { min-height: 37px; padding: 0 11px; font-size: 10px; }
+    .below-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }
+    .settings-card, .history-card { padding: 20px 22px; }
+    .settings-card h2, .history-card h2 { margin: 0 0 16px; font-size: 14px; }
+    .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field { display: flex; flex-direction: column; gap: 7px; }
+    .field label { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+    .field input { width: 100%; min-width: 0; height: 39px; padding: 0 11px; color: var(--text); background: var(--surface-soft); border: 1px solid var(--line-soft); border-radius: 10px; font-size: 12px; }
+    .file-row { display: flex; gap: 8px; }
+    .file-row .btn { min-height: 39px; padding: 0 10px; font-size: 10px; white-space: nowrap; }
+    input[type=file] { display: none; }
+    .setting-note { color: var(--muted); font-size: 10px; margin: 11px 0 0; line-height: 1.5; }
+    .history-list { max-height: 170px; overflow: auto; scrollbar-color: var(--gold) var(--surface-raised); scrollbar-width: thin; }
+    .history-empty { color: var(--muted); font-size: 11px; padding: 5px 0; }
+    .history-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line-soft); }
+    .history-item:last-child { border-bottom: 0; }
+    .history-info strong { display: block; font-size: 11px; }
+    .history-info span { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; }
+    .history-item .btn { min-height: 32px; padding: 0 10px; font-size: 10px; }
+    .export-row { display: flex; justify-content: center; margin-top: 19px; }
+    .export-button { min-width: 204px; min-height: 46px; }
+    .footer { display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-top: 26px; padding-top: 17px; border-top: 1px solid var(--line-soft); color: var(--muted); font-size: 10px; }
+    .footer strong { color: var(--gold); letter-spacing: .13em; }
+    .toast { position: fixed; z-index: 5; left: 50%; bottom: 25px; transform: translate(-50%, 15px); opacity: 0; pointer-events: none; background: var(--surface-raised); color: var(--text); border: 1px solid var(--line); box-shadow: var(--shadow); border-radius: 12px; padding: 12px 17px; font-size: 12px; transition: .25s ease; }
+    .toast.visible { opacity: 1; transform: translate(-50%, 0); }
+    @media (max-width: 790px) {
+      .workspace { grid-template-columns: 1fr; }
+      .side-card { min-height: 0; }
+      .records-list { max-height: 280px; }
+    }
+    @media (max-width: 560px) {
+      .app-shell { width: min(100% - 26px, 480px); padding-top: 18px; }
+      .topbar { align-items: flex-start; }
+      .brand { gap: 10px; }
+      .logo-frame { width: 46px; height: 46px; flex-basis: 46px; border-radius: 14px; }
+      .brand-name { font-size: 16px; }
+      .brand-caption { font-size: 8px; }
+      .live-clock { display: none; }
+      .top-actions { margin-left: auto; }
+      .quiet-button { padding: 9px 10px; font-size: 10px; }
+      .hero { padding: 37px 0 22px; }
+      .subtitle { font-size: 12px; }
+      .timer-card { padding: 21px 14px 19px; border-radius: 18px; }
+      .timer-display { padding: 45px 0 33px; gap: 3px; }
+      .time-unit { gap: 2px; }
+      .time-label { font-size: 7px; }
+      .controls { gap: 8px; }
+      .controls .btn { flex: 1 1 calc(33.333% - 8px); padding: 0 7px; min-height: 41px; font-size: 11px; }
+      .timer-footnote { gap: 12px; font-size: 10px; }
+      .below-grid { grid-template-columns: 1fr; gap: 13px; }
+      .settings-card, .history-card { padding: 18px; }
+      .footer { flex-direction: column; text-align: center; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo-frame" id="logoFrame" aria-label="Logo Onny Coach">
+          <img src="onny-coach-logo.jpg" alt="Logo Onny Coach: entrenador con cronómetro" onerror="this.hidden=true; this.nextElementSibling.hidden=false">
+          <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true" hidden>
+            <path d="M11 25.5c0-6.5 5.1-11.7 11.5-11.7h12.1a3.5 3.5 0 0 1 3.5 3.5v5.1a3.5 3.5 0 0 1-3.5 3.5H28l-9.3 9.3a3 3 0 0 1-5.1-2.1v-4A11.5 11.5 0 0 1 11 25.5Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>
+            <path d="M28 18.3h9M28 23h9M8 13l-3-2m8-4-1-3m-5 9-4-1" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-name">ONNY COACH</div>
+          <div class="brand-caption" id="brandInstitution">PERFORMANCE · TRAINING</div>
+        </div>
+      </div>
+      <div class="live-clock" aria-live="off"><strong id="clockTime">--:--:--</strong><span id="clockDate">Cargando fecha…</span></div>
+      <div class="top-actions">
+        <button class="quiet-button" id="themeToggle" type="button" aria-label="Cambiar modo visual">☼ <span>Modo claro</span></button>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="eyebrow">Tu próximo récord empieza ahora</div>
+      <h1>Entrena con intención.</h1>
+      <p class="subtitle">Precisión en cada segundo. Resultados en cada sesión.</p>
+      <div class="quote" id="motivation">Cada segundo cuenta.</div>
+    </section>
+
+    <section class="workspace" aria-label="Cronómetro y tiempos">
+      <section class="card timer-card">
+        <div class="timer-status-row">
+          <span class="section-label">Cronómetro de entrenamiento</span>
+          <span class="status-pill" id="statusPill"><span class="status-dot"></span><span id="statusText">Reiniciado</span></span>
+        </div>
+        <div class="timer-display" role="timer" aria-label="Tiempo transcurrido">
+          <span class="time-unit"><span class="time-number" id="hours">00</span><span class="time-label">h</span></span>
+          <span class="time-separator">:</span>
+          <span class="time-unit"><span class="time-number" id="minutes">00</span><span class="time-label">min</span></span>
+          <span class="time-separator">:</span>
+          <span class="time-unit"><span class="time-number" id="seconds">00</span><span class="time-label">seg</span></span>
+          <span class="time-separator">.</span>
+          <span class="time-number millis" id="milliseconds">000</span>
+        </div>
+        <div class="progress-area">
+          <div class="progress-meta"><span>Progreso del objetivo</span><strong id="progressLabel">0% · objetivo 30 min</strong></div>
+          <div class="progress-track" role="progressbar" aria-label="Progreso del objetivo de entrenamiento" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="progress-fill" id="progressFill"></div></div>
+        </div>
+        <div class="controls">
+          <button class="btn btn-primary btn-wide" id="startButton" type="button">▶ &nbsp; Iniciar</button>
+          <button class="btn" id="pauseButton" type="button" disabled>Ⅱ &nbsp; Pausar</button>
+          <button class="btn" id="resumeButton" type="button" disabled>▶ &nbsp; Reanudar</button>
+          <button class="btn" id="resetButton" type="button">↺ &nbsp; Reiniciar</button>
+          <button class="btn btn-outline" id="saveButton" type="button" disabled>＋ &nbsp; Guardar tiempo</button>
+        </div>
+        <div class="timer-footnote">
+          <span>⏱ <b id="recordCount">0 tiempos guardados</b></span>
+          <span>◷ Precisión de milisegundos</span>
+        </div>
+      </section>
+
+      <section class="card side-card">
+        <div class="card-heading"><h2>Tiempos de la sesión</h2><span class="count-badge" id="countBadge">0</span></div>
+        <ol class="records-list" id="recordsList" aria-live="polite"></ol>
+        <div class="record-actions">
+          <button class="btn" id="speakToggle" type="button" aria-pressed="true">◖ Voz activada</button>
+          <button class="btn btn-danger" id="clearButton" type="button" disabled>⌫ Borrar tiempos</button>
+        </div>
+      </section>
+    </section>
+
+    <section class="below-grid">
+      <section class="card settings-card">
+        <h2>Personaliza tu experiencia</h2>
+        <div class="settings-grid">
+          <div class="field">
+            <label for="institutionInput">Equipo / institución</label>
+            <input id="institutionInput" type="text" maxlength="60" placeholder="Nombre de tu equipo">
+          </div>
+          <div class="field">
+            <label for="goalInput">Objetivo (minutos)</label>
+            <input id="goalInput" type="number" min="1" max="1440" step="1" value="30">
+          </div>
+          <div class="field">
+            <label>Logo personalizado</label>
+            <div class="file-row">
+              <label class="btn" for="logoInput" tabindex="0">＋ Elegir imagen</label>
+              <button class="btn" id="removeLogo" type="button">Quitar</button>
+            </div>
+            <input id="logoInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+          </div>
+        </div>
+        <p class="setting-note">Tu logo, preferencias y registros se guardan en este dispositivo.</p>
+      </section>
+      <section class="card history-card">
+        <h2>Historial de entrenamientos</h2>
+        <div class="history-list" id="historyList"></div>
+      </section>
+    </section>
+    <div class="export-row"><button class="btn btn-primary export-button" id="exportButton" type="button">▧ &nbsp; Descargar PDF</button></div>
+    <footer class="footer"><span>Entrena con propósito. <strong>SUPERA TUS LÍMITES.</strong></span><span>Generado por Onny Coach</span></footer>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      "use strict";
+      const STORAGE_KEY = "onnyCoachApp_v1";
+      const MAX_RECORDS = 100;
+      const MAX_HISTORY = 30;
+      const quotes = [
+        "Cada segundo cuenta.", "La disciplina vence al talento.", "El esfuerzo crea campeones.",
+        "Mejora un poco cada día.", "Tu única competencia eres tú mismo.", "La constancia construye resultados."
+      ];
+      const $ = (id) => document.getElementById(id);
+      const ui = {
+        hours: $("hours"), minutes: $("minutes"), seconds: $("seconds"), milliseconds: $("milliseconds"),
+        statusPill: $("statusPill"), statusText: $("statusText"), start: $("startButton"), pause: $("pauseButton"),
+        resume: $("resumeButton"), reset: $("resetButton"), save: $("saveButton"), clear: $("clearButton"),
+        list: $("recordsList"), count: $("recordCount"), badge: $("countBadge"), progress: $("progressFill"),
+        progressLabel: $("progressLabel"), progressTrack: document.querySelector('[role="progressbar"]'),
+        institution: $("institutionInput"), goal: $("goalInput"), theme: $("themeToggle"), logoInput: $("logoInput"),
+        logoFrame: $("logoFrame"), brandInstitution: $("brandInstitution"), history: $("historyList")
+      };
+
+      const defaultData = { records: [], history: [], institution: "", goal: 30, theme: "dark", logo: "", voice: true };
+      let data = loadData();
+      let elapsed = 0;
+      let startedAt = 0;
+      let ticker = null;
+      let state = "reset";
+      let lastAnnouncedMinute = 0;
+      let toastTimer;
+
+      function loadData() {
+        try {
+          const stored = localStorage.getItem(STORAGE_KEY);
+          if (!stored) return { ...defaultData };
+          const parsed = JSON.parse(stored);
+          return {
+            ...defaultData, ...parsed,
+            records: Array.isArray(parsed.records) ? parsed.records.slice(0, MAX_RECORDS) : [],
+            history: Array.isArray(parsed.history) ? parsed.history.slice(0, MAX_HISTORY) : [],
+            goal: Number.isFinite(Number(parsed.goal)) && Number(parsed.goal) > 0 ? Math.min(1440, Number(parsed.goal)) : 30
+          };
+        } catch (error) {
+          console.error("No se pudieron leer los datos guardados de Onny Coach.", error);
+          return { ...defaultData };
+        }
+      }
+      function persist() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        } catch (error) {
+          console.error("No se pudieron guardar los datos de Onny Coach.", error);
+          showToast("No hay espacio disponible para guardar los cambios.");
+        }
+      }
+      function showToast(message) {
+        const toast = $("toast");
+        toast.textContent = message;
+        toast.classList.add("visible");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove("visible"), 2600);
+      }
+      function speak(message) {
+        if (!data.voice || !("speechSynthesis" in window)) return;
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(message);
+        utterance.lang = "es-ES";
+        utterance.rate = 1;
+        window.speechSynthesis.speak(utterance);
+      }
+      function playTone(frequency, duration, type = "sine", volume = .08) {
+        try {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContextClass) return;
+          const context = new AudioContextClass();
+          const oscillator = context.createOscillator();
+          const gain = context.createGain();
+          oscillator.type = type;
+          oscillator.frequency.setValueAtTime(frequency, context.currentTime);
+          gain.gain.setValueAtTime(volume, context.currentTime);
+          gain.gain.exponentialRampToValueAtTime(.001, context.currentTime + duration);
+          oscillator.connect(gain);
+          gain.connect(context.destination);
+          oscillator.start();
+          oscillator.stop(context.currentTime + duration);
+          oscillator.onended = () => context.close();
+        } catch (error) {
+          console.warn("El audio no está disponible en este navegador.", error);
+        }
+      }
+      function whistle() {
+        playTone(1550, .16, "triangle", .055);
+        setTimeout(() => playTone(1900, .2, "triangle", .045), 110);
+      }
+      function formatTime(ms, hundredths = true) {
+        const totalMs = Math.floor(Math.max(0, ms));
+        const millis = totalMs % 1000;
+        const totalSeconds = Math.floor(totalMs / 1000);
+        const sec = totalSeconds % 60;
+        const min = Math.floor(totalSeconds / 60) % 60;
+        const hrs = Math.floor(totalSeconds / 3600);
+        const base = `${String(hrs).padStart(2, "0")}:${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+        return hundredths ? `${base}.${String(millis).padStart(3, "0")}` : base;
+      }
+      function formatDate(date) {
+        return new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", timeStyle: "short" }).format(date);
+      }
+      function renderTimer() {
+        const ms = state === "running" ? elapsed + (performance.now() - startedAt) : elapsed;
+        const totalMs = Math.floor(Math.max(0, ms));
+        const totalSeconds = Math.floor(totalMs / 1000);
+        ui.hours.textContent = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
+        ui.minutes.textContent = String(Math.floor(totalSeconds / 60) % 60).padStart(2, "0");
+        ui.seconds.textContent = String(totalSeconds % 60).padStart(2, "0");
+        ui.milliseconds.textContent = String(totalMs % 1000).padStart(3, "0");
+        const target = Number(data.goal) * 60000;
+        const percent = Math.min(100, Math.floor(ms / target * 100));
+        ui.progress.style.width = `${percent}%`;
+        ui.progressLabel.textContent = `${percent}% · objetivo ${data.goal} min`;
+        ui.progressTrack.setAttribute("aria-valuenow", String(percent));
+        if (state === "running") {
+          const currentMinute = Math.floor(ms / 60000);
+          if (currentMinute > lastAnnouncedMinute) {
+            lastAnnouncedMinute = currentMinute;
+            speak(`${currentMinute} minuto${currentMinute === 1 ? "" : "s"} transcurrido${currentMinute === 1 ? "" : "s"}.`);
+          }
+        }
+      }
+      function renderState() {
+        ui.statusText.textContent = state === "running" ? "Activo" : state === "paused" ? "Pausado" : "Reiniciado";
+        ui.statusPill.classList.toggle("running", state === "running");
+        ui.statusPill.classList.toggle("paused", state === "paused");
+        ui.start.disabled = state !== "reset";
+        ui.pause.disabled = state !== "running";
+        ui.resume.disabled = state !== "paused";
+        ui.save.disabled = state === "reset";
+        if (state === "running" && !ticker) ticker = setInterval(renderTimer, 30);
+        if (state !== "running" && ticker) { clearInterval(ticker); ticker = null; }
+        renderTimer();
+      }
+      function renderRecords() {
+        const records = data.records;
+        ui.badge.textContent = String(records.length);
+        ui.count.textContent = `${records.length} ${records.length === 1 ? "tiempo guardado" : "tiempos guardados"}`;
+        ui.clear.disabled = records.length === 0;
+        if (!records.length) {
+          ui.list.innerHTML = '<li class="empty-state"><div><span class="empty-icon">◷</span>Aún no hay tiempos guardados.<br>Inicia el cronómetro y registra tu progreso.</div></li>';
+          return;
+        }
+        ui.list.innerHTML = records.map((record, index) => `
+          <li class="record-item">
+            <div class="record-left"><span class="record-index">${record.number}</span><div><div class="record-title">Tiempo ${record.number}</div><div class="record-date">${escapeHtml(record.date)}</div></div></div>
+            <span class="record-time">${formatTime(record.ms)}</span>
+          </li>`).join("");
+      }
+      function renderHistory() {
+        if (!data.history.length) {
+          ui.history.innerHTML = '<div class="history-empty">Tus sesiones exportadas aparecerán aquí.</div>';
+          return;
+        }
+        ui.history.innerHTML = data.history.map((item) => `
+          <div class="history-item">
+            <div class="history-info"><strong>${escapeHtml(item.institution || "Onny Coach")}</strong><span>${escapeHtml(item.date)} · ${formatTime(item.total)}</span></div>
+            <button class="btn btn-outline history-download" type="button" data-id="${escapeHtml(item.id)}">↓ PDF</button>
+          </div>`).join("");
+      }
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+      }
+      function applyTheme() {
+        const light = data.theme === "light";
+        document.body.classList.toggle("light", light);
+        ui.theme.innerHTML = light ? "☾ <span>Modo oscuro</span>" : "☼ <span>Modo claro</span>";
+        ui.theme.setAttribute("aria-label", light ? "Cambiar a modo oscuro" : "Cambiar a modo claro");
+        document.querySelector('meta[name="theme-color"]').content = light ? "#f2f0e9" : "#10110f";
+      }
+      function applyLogo() {
+        if (data.logo) {
+          ui.logoFrame.innerHTML = `<img src="${data.logo}" alt="Logo personalizado de Onny Coach">`;
+          return;
+        }
+        ui.logoFrame.innerHTML = '<img src="onny-coach-logo.jpg" alt="Logo Onny Coach: entrenador con cronómetro" onerror="this.hidden=true; this.nextElementSibling.hidden=false"><svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true" hidden><path d="M11 25.5c0-6.5 5.1-11.7 11.5-11.7h12.1a3.5 3.5 0 0 1 3.5 3.5v5.1a3.5 3.5 0 0 1-3.5 3.5H28l-9.3 9.3a3 3 0 0 1-5.1-2.1v-4A11.5 11.5 0 0 1 11 25.5Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M28 18.3h9M28 23h9M8 13l-3-2m8-4-1-3m-5 9-4-1" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
+      }
+      function refreshInstitution() {
+        ui.brandInstitution.textContent = data.institution.trim() || "PERFORMANCE · TRAINING";
+      }
+      function updateClock() {
+        const now = new Date();
+        $("clockTime").textContent = new Intl.DateTimeFormat("es-MX", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(now);
+        $("clockDate").textContent = new Intl.DateTimeFormat("es-MX", { weekday: "short", day: "numeric", month: "short", year: "numeric" }).format(now);
+      }
+      function begin() {
+        if (state !== "reset") return;
+        elapsed = 0; lastAnnouncedMinute = 0; startedAt = performance.now(); state = "running";
+        renderState(); whistle(); speak("Cronómetro iniciado.");
+      }
+      function pause() {
+        if (state !== "running") return;
+        elapsed += performance.now() - startedAt; state = "paused"; renderState(); speak("Cronómetro pausado.");
+      }
+      function resume() {
+        if (state !== "paused") return;
+        startedAt = performance.now(); state = "running"; renderState(); speak("Cronómetro reanudado.");
+      }
+      function reset() {
+        if (state === "reset" && elapsed === 0) return;
+        state = "reset"; elapsed = 0; lastAnnouncedMinute = 0; renderState(); speak("Cronómetro reiniciado.");
+      }
+      function saveRecord() {
+        if (state === "reset") return;
+        const ms = Math.floor(state === "running" ? elapsed + performance.now() - startedAt : elapsed);
+        if (data.records.length >= MAX_RECORDS) { showToast("Alcanzaste el máximo de 100 tiempos."); return; }
+        data.records.unshift({ number: data.records.length ? Math.max(...data.records.map(item => Number(item.number) || 0)) + 1 : 1, ms, date: formatDate(new Date()) });
+        persist(); renderRecords(); playTone(880, .13, "sine", .055); speak("Tiempo guardado.");
+      }
+      function clearRecords() {
+        if (!data.records.length) return;
+        if (!confirm("¿Quieres borrar todos los tiempos de esta sesión?")) return;
+        data.records = []; persist(); renderRecords(); speak("Registros eliminados.");
+      }
+      function dataForExport(saved) {
+        if (saved) return { ...saved, noDefaultLogo: !saved.logo };
+        const total = Math.floor(state === "running" ? elapsed + performance.now() - startedAt : elapsed);
+        return { id: String(Date.now()), date: formatDate(new Date()), total, institution: data.institution, records: data.records.map(record => ({ ...record })), logo: data.logo, noDefaultLogo: false };
+      }
+      function ascii(value) {
+        return String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\x20-\x7E]/g, "?");
+      }
+      function pdfEscape(value) { return ascii(value).replace(/([\\()])/g, "\\$1"); }
+      async function createPdf(session) {
+        const pageW = 595, pageH = 842, margin = 44;
+        const records = session.records || [];
+        const rowsPerPage = 29;
+        const pageCount = Math.max(1, Math.ceil(records.length / rowsPerPage));
+        const objects = [];
+        const addObject = (body) => { objects.push(body); return objects.length; };
+        const catalogId = addObject("");
+        const pagesId = addObject("");
+        const fontId = addObject("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+        const fontBoldId = addObject("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
+        let logoImage = null;
+        if (session.logo || !session.noDefaultLogo) {
+          try {
+            const image = new Image();
+            image.src = session.logo || new URL("onny-coach-logo.jpg", document.baseURI).href;
+            await image.decode();
+            const canvas = document.createElement("canvas");
+            const size = 160;
+            canvas.width = size; canvas.height = size;
+            const context = canvas.getContext("2d");
+            context.fillStyle = "#ffffff"; context.fillRect(0, 0, size, size);
+            const ratio = Math.min(size / image.naturalWidth, size / image.naturalHeight);
+            const width = image.naturalWidth * ratio, height = image.naturalHeight * ratio;
+            context.drawImage(image, (size - width) / 2, (size - height) / 2, width, height);
+            const encoded = atob(canvas.toDataURL("image/jpeg", .88).split(",")[1]);
+            logoImage = Uint8Array.from(encoded, char => char.charCodeAt(0));
+          } catch (error) {
+            console.warn("El logo no se pudo incluir en el PDF.", error);
+          }
+        }
+        let imageId = null;
+        if (logoImage) {
+          imageId = addObject({ stream: logoImage, prefix: `<< /Type /XObject /Subtype /Image /Width 160 /Height 160 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${logoImage.length} >>` });
+        }
+        const pageIds = [];
+        for (let page = 0; page < pageCount; page++) {
+          const commands = [];
+          const rect = (x, y, w, h, color) => commands.push(`${color} rg ${x} ${y} ${w} ${h} re f`);
+          const line = (x1, y1, x2, y2, color, width = 1) => commands.push(`${color} RG ${width} w ${x1} ${y1} m ${x2} ${y2} l S`);
+          const text = (value, x, y, size, color, bold = false) => commands.push(`BT /${bold ? "F2" : "F1"} ${size} Tf ${color} rg 1 0 0 1 ${x} ${y} Tm (${pdfEscape(value)}) Tj ET`);
+          rect(0, 0, pageW, pageH, "0.063 0.067 0.059");
+          rect(0, pageH - 9, pageW, 9, "0.843 0.702 0.353");
+          rect(margin, pageH - 107, pageW - margin * 2, 1, "0.843 0.702 0.353");
+          if (imageId) {
+            commands.push(`q 52 0 0 52 ${margin} ${pageH - 83} cm /Im1 Do Q`);
+            commands.push(`0.843 0.702 0.353 RG 1.2 w ${margin} ${pageH - 83} 52 52 re S`);
+          } else {
+            commands.push(`0.843 0.702 0.353 RG 1.2 w ${margin} ${pageH - 83} 52 52 re S`);
+            text("OC", margin + 13, pageH - 62, 18, "0.941 0.824 0.490", true);
+          }
+          text("ONNY COACH", margin + 67, pageH - 49, 20, "0.961 0.957 0.937", true);
+          text("REPORTE DE ENTRENAMIENTO", margin + 67, pageH - 68, 8, "0.843 0.702 0.353", true);
+          text(session.institution || "Performance Training", margin + 67, pageH - 84, 9, "0.72 0.72 0.68");
+          text("SESION", margin, pageH - 137, 8, "0.843 0.702 0.353", true);
+          text(`Generado: ${session.date}`, margin, pageH - 155, 9, "0.72 0.72 0.68");
+          text("TIEMPO TOTAL", margin, pageH - 196, 8, "0.843 0.702 0.353", true);
+          text(formatTime(session.total), margin, pageH - 234, 30, "0.961 0.957 0.937", true);
+          rect(margin, pageH - 252, pageW - margin * 2, 1, "0.28 0.28 0.25");
+          text("REGISTROS DE TIEMPO", margin, pageH - 276, 9, "0.843 0.702 0.353", true);
+          text(`Total de registros: ${records.length}`, pageW - margin - 107, pageH - 276, 8, "0.72 0.72 0.68");
+          const start = page * rowsPerPage;
+          const pageRecords = records.slice(start, start + rowsPerPage);
+          const tableTop = pageH - 303;
+          rect(margin, tableTop - 7, pageW - margin * 2, 22, "0.15 0.16 0.14");
+          text("#", margin + 10, tableTop, 8, "0.843 0.702 0.353", true);
+          text("TIEMPO", margin + 63, tableTop, 8, "0.843 0.702 0.353", true);
+          text("FECHA Y HORA", margin + 196, tableTop, 8, "0.843 0.702 0.353", true);
+          pageRecords.forEach((record, index) => {
+            const y = tableTop - 28 - index * 16;
+            if (index % 2 === 0) rect(margin, y - 4, pageW - margin * 2, 16, "0.09 0.095 0.085");
+            text(String(record.number), margin + 10, y, 8, "0.91 0.89 0.82");
+            text(formatTime(record.ms), margin + 63, y, 8, "0.961 0.957 0.937", true);
+            text(record.date, margin + 196, y, 8, "0.72 0.72 0.68");
+          });
+          line(margin, 48, pageW - margin, 48, "0.28 0.28 0.25", .7);
+          text("Generado por Onny Coach.", margin, 31, 8, "0.843 0.702 0.353", true);
+          text(`Pagina ${page + 1} de ${pageCount}`, pageW - margin - 54, 31, 8, "0.72 0.72 0.68");
+          const stream = commands.join("\n");
+          const resources = `/Font << /F1 ${fontId} 0 R /F2 ${fontBoldId} 0 R >>${imageId ? ` /XObject << /Im1 ${imageId} 0 R >>` : ""}`;
+          const contentId = addObject({ stream: new TextEncoder().encode(stream), prefix: `<< /Length ${new TextEncoder().encode(stream).length} >>` });
+          const pageId = addObject(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${pageW} ${pageH}] /Resources << ${resources} >> /Contents ${contentId} 0 R >>`);
+          pageIds.push(pageId);
+        }
+        objects[catalogId - 1] = `<< /Type /Catalog /Pages ${pagesId} 0 R >>`;
+        objects[pagesId - 1] = `<< /Type /Pages /Kids [${pageIds.map(id => `${id} 0 R`).join(" ")}] /Count ${pageIds.length} >>`;
+        const chunks = [];
+        const offsets = [0];
+        let byteOffset = 0;
+        const push = (chunk) => { chunks.push(chunk); byteOffset += chunk.length; };
+        push(new TextEncoder().encode("%PDF-1.4\n"));
+        objects.forEach((object, index) => {
+          offsets.push(byteOffset);
+          push(new TextEncoder().encode(`${index + 1} 0 obj\n`));
+          if (object && typeof object === "object" && object.stream) {
+            push(new TextEncoder().encode(`${object.prefix}\nstream\n`));
+            push(object.stream);
+            push(new TextEncoder().encode("\nendstream\nendobj\n"));
+          } else push(new TextEncoder().encode(`${object}\nendobj\n`));
+        });
+        const xrefOffset = byteOffset;
+        push(new TextEncoder().encode(`xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`));
+        offsets.slice(1).forEach(offset => push(new TextEncoder().encode(`${String(offset).padStart(10, "0")} 00000 n \n`)));
+        push(new TextEncoder().encode(`trailer\n<< /Size ${objects.length + 1} /Root ${catalogId} 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`));
+        return new Blob(chunks, { type: "application/pdf" });
+      }
+      function filenameFor(date) {
+        const stamp = date.toISOString().replace(/[-:T]/g, "").slice(0, 14);
+        return `ONNY_COACH_${stamp}.pdf`;
+      }
+      async function downloadPdf(session) {
+        const blob = await createPdf(session);
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        link.download = filenameFor(new Date());
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        playTone(660, .12, "sine", .05);
+        setTimeout(() => playTone(880, .2, "sine", .045), 100);
+      }
+      async function exportCurrent() {
+        const session = dataForExport();
+        try {
+          await downloadPdf(session);
+        } catch (error) {
+          console.error("No se pudo generar el PDF de Onny Coach.", error);
+          showToast("No se pudo generar el PDF. Inténtalo de nuevo.");
+          return;
+        }
+        data.history.unshift(session);
+        data.history = data.history.slice(0, MAX_HISTORY);
+        persist(); renderHistory(); speak("PDF generado.");
+        showToast("Tu reporte PDF está listo.");
+      }
+      $("themeToggle").addEventListener("click", () => {
+        data.theme = data.theme === "light" ? "dark" : "light"; persist(); applyTheme();
+      });
+      ui.start.addEventListener("click", begin);
+      ui.pause.addEventListener("click", pause);
+      ui.resume.addEventListener("click", resume);
+      ui.reset.addEventListener("click", reset);
+      ui.save.addEventListener("click", saveRecord);
+      ui.clear.addEventListener("click", clearRecords);
+      $("exportButton").addEventListener("click", () => { void exportCurrent(); });
+      $("speakToggle").addEventListener("click", (event) => {
+        data.voice = !data.voice; persist();
+        event.currentTarget.textContent = data.voice ? "◖ Voz activada" : "◖ Voz desactivada";
+        event.currentTarget.setAttribute("aria-pressed", String(data.voice));
+        if (!data.voice && "speechSynthesis" in window) window.speechSynthesis.cancel();
+        showToast(data.voice ? "Asistente de voz activado." : "Asistente de voz desactivado.");
+      });
+      ui.list.addEventListener("click", (event) => {
+        const button = event.target.closest(".remove-record");
+        if (!button) return;
+        const number = Number(button.dataset.number);
+        data.records = data.records.filter(record => record.number !== number);
+        persist(); renderRecords();
+      });
+      ui.history.addEventListener("click", (event) => {
+        const button = event.target.closest(".history-download");
+        if (!button) return;
+        const session = data.history.find(item => item.id === button.dataset.id);
+        if (session) void downloadPdf(session).catch((error) => {
+          console.error("No se pudo volver a descargar el PDF.", error);
+          showToast("No se pudo generar el PDF de este entrenamiento.");
+        });
+      });
+      ui.institution.value = data.institution;
+      ui.institution.addEventListener("input", () => {
+        data.institution = ui.institution.value.slice(0, 60); refreshInstitution(); persist();
+      });
+      ui.goal.value = String(data.goal);
+      ui.goal.addEventListener("change", () => {
+        const value = Number(ui.goal.value);
+        if (!Number.isInteger(value) || value < 1 || value > 1440) {
+          ui.goal.value = String(data.goal); showToast("El objetivo debe ser de 1 a 1440 minutos."); return;
+        }
+        data.goal = value; persist(); renderTimer();
+      });
+      ui.logoInput.addEventListener("change", () => {
+        const file = ui.logoInput.files && ui.logoInput.files[0];
+        if (!file) return;
+        if (!file.type.startsWith("image/")) { showToast("Selecciona un archivo de imagen válido."); return; }
+        if (file.size > 3 * 1024 * 1024) { showToast("La imagen debe pesar menos de 3 MB."); ui.logoInput.value = ""; return; }
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result !== "string") { showToast("No se pudo cargar la imagen."); return; }
+          const image = new Image();
+          image.onload = () => {
+            const canvas = document.createElement("canvas");
+            const limit = 400;
+            const scale = Math.min(1, limit / Math.max(image.naturalWidth, image.naturalHeight));
+            canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+            canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+            const context = canvas.getContext("2d");
+            if (!context) { showToast("No se pudo procesar la imagen."); return; }
+            context.fillStyle = "#ffffff";
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(image, 0, 0, canvas.width, canvas.height);
+            data.logo = canvas.toDataURL("image/jpeg", .82);
+            persist(); ui.logoFrame.innerHTML = `<img src="${data.logo}" alt="Logo personalizado de Onny Coach">`;
+            showToast("Logo actualizado.");
+          };
+          image.onerror = () => showToast("El archivo de imagen no es válido.");
+          image.src = reader.result;
+        };
+        reader.onerror = () => showToast("No se pudo leer el archivo de imagen.");
+        reader.readAsDataURL(file);
+      });
+      $("removeLogo").addEventListener("click", () => {
+        data.logo = ""; persist(); applyLogo();
+        ui.logoInput.value = ""; showToast("Logo predeterminado restaurado.");
+      });
+
+      $("motivation").textContent = quotes[Math.floor(Math.random() * quotes.length)];
+      if (!data.voice) { $("speakToggle").textContent = "◖ Voz desactivada"; $("speakToggle").setAttribute("aria-pressed", "false"); }
+      applyTheme(); applyLogo(); refreshInstitution(); renderState(); renderRecords(); renderHistory(); updateClock();
+      setInterval(updateClock, 1000);
+    })();
+  </script>
+</body>
+</html>
